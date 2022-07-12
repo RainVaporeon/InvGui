@@ -45,13 +45,13 @@ public class KeyBindings {
         }
         if(kb4.isPressed()) {
             if(loadGui(1)) {
-                message.send("Loading saved GUI #1");
+                message.send("Loading saved GUI #2");
             }
             return;
         }
         if(kb5.isPressed()) {
             if(loadGui(2)) {
-                message.send("Loading saved GUI #1");
+                message.send("Loading saved GUI #3");
             }
             return;
         }
