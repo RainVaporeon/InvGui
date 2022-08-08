@@ -19,7 +19,7 @@ public class PacketHandler extends ChannelDuplexHandler {
     private static final LinkedList<Packet<? extends INetHandler>> queuedPackets = new LinkedList<>();
 
     public enum Enum {
-        READ, WRITE;
+        READ, WRITE
     }
 
     @Override // Receive packet
@@ -38,12 +38,13 @@ public class PacketHandler extends ChannelDuplexHandler {
 
     @Override // Send packet
     public void write(ChannelHandlerContext ctx, Object obj, ChannelPromise promise) throws Exception {
-        if(!packetReceiving && obj instanceof Packet) {
-            queuedPackets.add((Packet<? extends INetHandler>)obj);
-            return;
-        }
-        if(obj instanceof Packet && Main.enabled) {
-            final List<String> dpw = new ArrayList<>(discardPacketsW);
+        if(obj instanceof Packet) {
+            if(!packetReceiving) {
+                queuedPackets.add((Packet<? extends INetHandler>)obj);
+                return;
+            }
+            if(Main.enabled) {
+                final List<String> dpw = new ArrayList<>(discardPacketsW);
                 for(String s : dpw) {
                     if(obj.getClass().getName().contains(s)) {
                         discardPacketsW.remove(s);
@@ -51,6 +52,7 @@ public class PacketHandler extends ChannelDuplexHandler {
                     }
                 }
             }
+        }
         super.write(ctx, obj, promise);
     }
 
@@ -67,12 +69,9 @@ public class PacketHandler extends ChannelDuplexHandler {
 
     /**
      * Discards all paused packets.
-     * @return A List of packets that have been discarded.
      */
-    protected static List<Packet<? extends INetHandler>> discardPausedPackets() {
-        List<Packet<? extends INetHandler>> ret = new LinkedList<>(queuedPackets);
+    protected static void discardPausedPackets() {
         queuedPackets.clear();
-        return ret;
     }
 
     public static void setPacketReceiving(boolean b) {
