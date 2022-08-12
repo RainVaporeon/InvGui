@@ -28,6 +28,7 @@ public class KeyBindings {
 
     @SubscribeEvent
     public void onKeyPress(InputEvent.KeyInputEvent event) {
+        if(!Main.enabled) return; // No activations
         if (keyBindings[0].isPressed()) {
             Main.enabled = !Main.enabled;
             message.send("Toggled mod!: " + Main.enabled);

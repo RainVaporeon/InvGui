@@ -13,7 +13,7 @@ public class Main
     public static final String MODID = "origasm";
     public static final String NAME = "InvGUI";
     public static final String VERSION = "1.0";
-    static boolean enabled = true;
+    static boolean enabled = false;
 
 
     @EventHandler

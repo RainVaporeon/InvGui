@@ -6,6 +6,7 @@ import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.client.ClientCommandHandler;
+import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
@@ -29,6 +30,8 @@ public class GuiHandler {
     private double mouseX = 0;
     private double mouseY = 0;
     private final Pattern validInput = Pattern.compile("\\w");
+    private boolean isTouchscreen = Minecraft.getMinecraft().gameSettings.touchscreen;
+    private boolean preventClosing = false;
 
     @SubscribeEvent
     public void onDrawScreen(final GuiScreenEvent.DrawScreenEvent.Post event) {
@@ -40,14 +43,16 @@ public class GuiHandler {
         mouseY = event.getMouseY();
     }
 
-    @SubscribeEvent (priority = EventPriority.HIGHEST) // We want the highest priority on input to override other hotkeys
+    @SubscribeEvent (priority = EventPriority.HIGHEST) // We want the highest priority on input to override other hotkeys for field inputs
     public void onKeyInput(final GuiScreenEvent.KeyboardInputEvent.Pre event) {
+        if(!Main.enabled) return;
         if(!(event.getGui() instanceof GuiContainer)) return;
         if(textField == null) return;
         if(textField.isFocused()) {
             textField.textboxKeyTyped(Keyboard.getEventCharacter(), Keyboard.getEventKey());
             previousInput = textField.getText();
-            event.setCanceled(validInput.matcher((Character.toString(Keyboard.getEventCharacter()))).find());
+            // Cancel any other operations after a valid textField input has been accepted: RegExr(\w) AND backspace for deletions
+            event.setCanceled(validInput.matcher((Character.toString(Keyboard.getEventCharacter()))).find() || Keyboard.getEventKey() == Keyboard.KEY_BACK);
         }
     }
 
@@ -55,6 +60,9 @@ public class GuiHandler {
     public void onMouseInput(GuiScreenEvent.MouseInputEvent.Post event) {
         if(!(event.getGui() instanceof GuiContainer)) return;
         if(textField == null) return;
+        if(!Main.enabled) {
+            textField.setFocused(false);
+        }
         if(Mouse.getEventButton() != 0) return;
         double tfXStart = textField.x;
         double tfXEnd = textField.x + textField.width;
@@ -73,6 +81,7 @@ public class GuiHandler {
         if (Minecraft.getMinecraft().player.inventory == null) {
             return;
         }
+        isTouchscreen = mc.gameSettings.touchscreen;
         final ScaledResolution sr = new ScaledResolution(mc);
         final FontRenderer fontRenderer = mc.fontRenderer;
         final int savedGui_x = (sr.getScaledWidth() + 225) / 2;
@@ -87,7 +96,8 @@ public class GuiHandler {
         final int btn4_y = (sr.getScaledHeight() + 125) / 2;
         if (event.getGui() instanceof GuiContainer) {
             event.getButtonList().add(new GuiButton(100, btn3_x, btn3_y, "Close GUI silently"));
-            event.getButtonList().add(new GuiButton(103, btn4_x, btn4_y, "Toggle Packets" + (PacketHandler.isPacketReceiving() ? TextFormatting.GREEN + " ON" : TextFormatting.RED + " OFF")));
+            event.getButtonList().add(new GuiButton(102, btn4_x+105, btn4_y, 95, 20, "TouchScreen" + (isTouchscreen ? TextFormatting.GREEN + " ON" : TextFormatting.RED + " OFF")));
+            event.getButtonList().add(new GuiButton(103, btn4_x, btn4_y, 95, 20, "Packets" + (PacketHandler.isPacketReceiving() ? TextFormatting.GREEN + " ON" : TextFormatting.RED + " OFF")));
             event.getButtonList().add(new GuiButton(104, savedGui_x, loadGui_y, 60, 20, "Load GUI 1"));
             event.getButtonList().add(new GuiButton(105, savedGui_x+70, loadGui_y, 60, 20, "Load GUI 2"));
             event.getButtonList().add(new GuiButton(106, savedGui_x+140, loadGui_y, 60, 20, "Load GUI 3"));
@@ -106,20 +116,38 @@ public class GuiHandler {
     }
 
     @SubscribeEvent
+    public void onGuiOpen(final GuiOpenEvent event) {
+        if(!Main.enabled) return;
+        if(preventClosing && event.getGui() == null) {
+            preventClosing = false;
+            event.setCanceled(true);
+        }
+    }
+
+    @SubscribeEvent
     public void onPostActionPerformedGui(final GuiScreenEvent.ActionPerformedEvent.Post event) {
         if(!Main.enabled) return;
         final Minecraft mc = Minecraft.getMinecraft();
         if (event.getGui() instanceof GuiContainer) {
+            if(isTouchscreen) preventClosing = true;
             switch(event.getButton().id) {
                 case 100:
+                    preventClosing = false;
                     mc.player.sendMessage(new TextComponentString("Silently closed GUI."));
                     PacketHandler.discardPacket("CPacketCloseWindow", PacketHandler.Enum.WRITE);
                     mc.player.closeScreen();
                     break;
+                case 102:
+                    preventClosing = !isTouchscreen;
+                    mc.gameSettings.touchscreen = !mc.gameSettings.touchscreen;
+                    isTouchscreen = mc.gameSettings.touchscreen;
+                    event.getButton().displayString = "Touchscreen" + (isTouchscreen ? TextFormatting.GREEN + " ON" : TextFormatting.RED + " OFF");
+                    mc.player.sendMessage(new TextComponentString("Touchscreen mode is now" + (isTouchscreen ? TextFormatting.GREEN + " ON" : TextFormatting.RED + " OFF") + TextFormatting.RESET + "\nYou may go to Options -> Controls to turn it off."));
+                    return;
                 case 103:
                     PacketHandler.setPacketReceiving(!PacketHandler.isPacketReceiving());
                     message.send("Toggled packet sending to " + PacketHandler.isPacketReceiving());
-                    event.getButton().displayString = "Toggle Packets" + (PacketHandler.isPacketReceiving() ? TextFormatting.GREEN + " ON" : TextFormatting.RED + " OFF");
+                    event.getButton().displayString = "Packets" + (PacketHandler.isPacketReceiving() ? TextFormatting.GREEN + " ON" : TextFormatting.RED + " OFF");
                     break;
                 case 104:
                     if(loadGui(0)) {
@@ -173,6 +201,8 @@ public class GuiHandler {
                     event.getButton().displayString = doPersist ? "O" : "X";
                     break;
             }
+            if(!isTouchscreen)
+                preventClosing = false;
         }
     }
 
