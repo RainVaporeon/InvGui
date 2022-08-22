@@ -13,17 +13,10 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 
-import java.util.ArrayList;
-import java.util.List;
+import javax.annotation.Nullable;
 import java.util.regex.Pattern;
 
 public class GuiHandler {
-    private static final List<GuiScreen> savedGuiList = new ArrayList<GuiScreen>(4) {{
-        add(0, null);
-        add(1, null);
-        add(2, null);
-        add(3, null);
-    }};
     private GuiTextField textField;
     private boolean doPersist = false;
     private String previousInput = "";
@@ -32,6 +25,7 @@ public class GuiHandler {
     private final Pattern validInput = Pattern.compile("\\w");
     private boolean isTouchscreen = Minecraft.getMinecraft().gameSettings.touchscreen;
     private boolean preventClosing = false;
+    private static GuiScreen lastGui;
 
     @SubscribeEvent
     public void onDrawScreen(final GuiScreenEvent.DrawScreenEvent.Post event) {
@@ -84,12 +78,9 @@ public class GuiHandler {
         isTouchscreen = mc.gameSettings.touchscreen;
         final ScaledResolution sr = new ScaledResolution(mc);
         final FontRenderer fontRenderer = mc.fontRenderer;
-        final int savedGui_x = (sr.getScaledWidth() + 225) / 2;
         final int cmd_x = (sr.getScaledWidth() + 225) / 2;
         final int cmdBtn_y = (sr.getScaledHeight() - 75) / 2;
         final int cmdField_y = (sr.getScaledHeight() - 125) / 2;
-        final int loadGui_y = (sr.getScaledHeight() - 25) / 2;
-        final int saveGui_y = (sr.getScaledHeight() + 25) / 2;
         final int btn3_x = (sr.getScaledWidth() + 225) / 2;
         final int btn3_y = (sr.getScaledHeight() + 75) / 2;
         final int btn4_x = (sr.getScaledWidth() + 225) / 2;
@@ -98,12 +89,6 @@ public class GuiHandler {
             event.getButtonList().add(new GuiButton(100, btn3_x, btn3_y, "Close GUI silently"));
             event.getButtonList().add(new GuiButton(102, btn4_x+105, btn4_y, 95, 20, "TouchScreen" + (isTouchscreen ? TextFormatting.GREEN + " ON" : TextFormatting.RED + " OFF")));
             event.getButtonList().add(new GuiButton(103, btn4_x, btn4_y, 95, 20, "Packets" + (PacketHandler.isPacketReceiving() ? TextFormatting.GREEN + " ON" : TextFormatting.RED + " OFF")));
-            event.getButtonList().add(new GuiButton(104, savedGui_x, loadGui_y, 60, 20, "Load GUI 1"));
-            event.getButtonList().add(new GuiButton(105, savedGui_x+70, loadGui_y, 60, 20, "Load GUI 2"));
-            event.getButtonList().add(new GuiButton(106, savedGui_x+140, loadGui_y, 60, 20, "Load GUI 3"));
-            event.getButtonList().add(new GuiButton(107, savedGui_x, saveGui_y, 60, 20, "Save GUI 1"));
-            event.getButtonList().add(new GuiButton(108, savedGui_x+70, saveGui_y, 60, 20, "Save GUI 2"));
-            event.getButtonList().add(new GuiButton(109, savedGui_x+140, saveGui_y, 60, 20, "Save GUI 3"));
             event.getButtonList().add(new GuiButton(110, cmd_x, cmdBtn_y, 95, 20, "Send Message"));
             event.getButtonList().add(new GuiButton(111, cmd_x+105, cmdBtn_y, 95, 20, "Invoke Client Command"));
             event.getButtonList().add(new GuiButton(1002, cmd_x+170, cmdField_y, 30, 20, doPersist ? "O" : "X"));
@@ -118,9 +103,15 @@ public class GuiHandler {
     @SubscribeEvent
     public void onGuiOpen(final GuiOpenEvent event) {
         if(!Main.enabled) return;
+        // Prevents touchscreen misinput exit via mouse
         if(preventClosing && event.getGui() == null) {
             preventClosing = false;
             event.setCanceled(true);
+        }
+        // If lastGui exists and a non-null GUI pops up, discards saved GUI as it's no longer valid
+        if(event.getGui() != null && lastGui != null) {
+            message.send("Your last silently closed GUI result have been automatically discarded.");
+            lastGui = null;
         }
     }
 
@@ -133,7 +124,8 @@ public class GuiHandler {
             switch(event.getButton().id) {
                 case 100:
                     preventClosing = false;
-                    mc.player.sendMessage(new TextComponentString("Silently closed GUI."));
+                    lastGui = event.getGui();
+                    mc.player.sendMessage(new TextComponentString("Silently closed GUI. Press U (Default) to reopen it."));
                     PacketHandler.discardPacket("CPacketCloseWindow", PacketHandler.Enum.WRITE);
                     mc.player.closeScreen();
                     break;
@@ -148,33 +140,6 @@ public class GuiHandler {
                     PacketHandler.setPacketReceiving(!PacketHandler.isPacketReceiving());
                     message.send("Toggled packet sending to " + PacketHandler.isPacketReceiving());
                     event.getButton().displayString = "Packets" + (PacketHandler.isPacketReceiving() ? TextFormatting.GREEN + " ON" : TextFormatting.RED + " OFF");
-                    break;
-                case 104:
-                    if(loadGui(0)) {
-                        message.send("Loading saved GUI #1");
-                    }
-                    break;
-                case 105:
-                    if(loadGui(1)) {
-                        message.send("Loading saved GUI #2");
-                    }
-                    break;
-                case 106:
-                    if(loadGui(2)) {
-                        message.send("Loading saved GUI #3");
-                    }
-                    break;
-                case 107:
-                    message.send("Saved GUI at slot #1");
-                    saveGui(0, event.getGui());
-                    break;
-                case 108:
-                    message.send("Saved GUI at slot #2");
-                    saveGui(1, event.getGui());
-                    break;
-                case 109:
-                    message.send("Saved GUI at slot #3");
-                    saveGui(2, event.getGui());
                     break;
                 case 110:
                     if(!textField.getText().equals("")) {
@@ -206,16 +171,8 @@ public class GuiHandler {
         }
     }
 
-    protected static boolean loadGui(int id) {
-        if(id < 0 || id >= 3) return false;
-        if(savedGuiList.get(id) == null) return false;
-        Minecraft.getMinecraft().displayGuiScreen(savedGuiList.get(id));
-        return true;
-    }
-
-    protected static void saveGui(int id, GuiScreen guiScreen) {
-        if(id < 0 || id >= 3) return;
-        savedGuiList.set(id, guiScreen);
+    protected static @Nullable GuiScreen getLastGui() {
+        return lastGui;
     }
 
     protected static boolean inRange(double toCompare, double min, double max) {

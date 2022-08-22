@@ -30,34 +30,14 @@ public class InvGuiCommand extends CommandBase {
     @Override
     public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException {
         if(args.length == 0) {
-            message.send("/invgui toggle|load args..");
+            message.send("/invgui toggle");
             return;
         }
-        switch(args[0].toLowerCase(Locale.ROOT)) {
-            case "toggle":
-                Main.enabled = !Main.enabled;
-                message.send("Toggled enable status to " + Main.enabled);
-                break;
-            case "load":
-                if(args.length == 1) {
-                    message.send("/invgui load #{1..3}");
-                    return;
-                }
-                try {
-                    int i = Integer.parseInt(args[1]);
-                    boolean b = GuiHandler.loadGui(i);
-                    if(b) {
-                        message.send("Loaded Gui");
-                    } else {
-                        message.send("Failed to load Gui");
-                    }
-                } catch (NumberFormatException ex) {
-                    message.send("Invalid operation");
-                    return;
-                }
-                break;
-            default:
-                message.send("/invgui toggle|load args..");
+        if ("toggle".equals(args[0].toLowerCase(Locale.ROOT))) {
+            Main.enabled = !Main.enabled;
+            message.send("Toggled enable status to " + Main.enabled);
+        } else {
+            message.send("/invgui toggle");
         }
     }
 }
