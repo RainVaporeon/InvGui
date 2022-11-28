@@ -1,0 +1,19 @@
+{
+  "required": true,
+  "package": "com.spiritlight.invgui.mixins",
+  "compatibilityLevel": "JAVA_8",
+  "refmap": "mixins.invgui.refmap.json",
+  "mixins": [
+    "IMixinCPacketPlayer",
+    "IMixinSPacketEntityVelocity"
+  ],
+  "client": [
+    "IMixinGuiScreen",
+    "IMixinMinecraft",
+    "MixinEntityPlayerSP",
+    "MixinGuiChat",
+    "MixinGuiScreen",
+    "MixinModList"
+  ],
+  "minVersion": "0.7.10"
+}
