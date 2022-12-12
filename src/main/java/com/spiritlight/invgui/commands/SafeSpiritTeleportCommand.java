@@ -14,8 +14,9 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 
 import java.util.Arrays;
+import java.util.concurrent.CompletableFuture;
 
-@AutoRegister(name = "sstp", requirePrefix = true)
+@AutoRegister(name = "sstp", requirePrefix = true, permission = 0)
 public class SafeSpiritTeleportCommand extends SpiritCommand {
     // Copy-pasted from stp command with a lil modification
     @Override
@@ -79,26 +80,33 @@ public class SafeSpiritTeleportCommand extends SpiritCommand {
     }
 
     private void teleportSplit(BlockPos start, BlockPos destination) {
-        BlockPos difference = destination.subtract(start);
-        Vec3d tmp = new Vec3d(difference.getX(), difference.getY(), difference.getZ());
-        Vec3d vector = tmp.normalize().scale(75.0d); // Traverse 75 blocks per iteration
-        // Calculate the expected teleports
-        double expectedTravelDistance = start.getDistance(destination.getX(), destination.getY(), destination.getZ());
-        // Base case: Already low enough
-        if(expectedTravelDistance <= 75.0) {
+        CompletableFuture.runAsync(() -> {
+            BlockPos difference = destination.subtract(start);
+            Vec3d tmp = new Vec3d(difference.getX(), difference.getY(), difference.getZ());
+            Vec3d vector = tmp.normalize().scale(75.0d); // Traverse 75 blocks per iteration
+            // Calculate the expected teleports
+            double expectedTravelDistance = start.getDistance(destination.getX(), destination.getY(), destination.getZ());
+            // Base case: Already low enough
+            if(expectedTravelDistance <= 75.0) {
+                PlayerUtils.teleportCenter(destination);
+                return;
+            }
+            int multiplier = 1;
+            while (Minecraft.getMinecraft().player.getPosition().getDistance(destination.getX(), destination.getY(), destination.getZ()) > 75.0) {
+                BlockPos expectedDestination = new BlockPos(start.getX() + vector.x * multiplier,
+                        start.getY() + vector.y * multiplier,
+                        start.getZ() + vector.z * multiplier);
+                // message.send("Teleporting to " + Arrays.toString(BlockPosUtils.toStringArray(expectedDestination)));
+                PlayerUtils.teleportCenter(expectedDestination);
+                multiplier++;
+                try {
+                    Thread.sleep(125);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+            // message.send("Teleporting to " + Arrays.toString(BlockPosUtils.toStringArray(destination)));
             PlayerUtils.teleportCenter(destination);
-            return;
-        }
-        int multiplier = 1;
-        while (Minecraft.getMinecraft().player.getPosition().getDistance(destination.getX(), destination.getY(), destination.getZ()) > 75.0) {
-            BlockPos expectedDestination = new BlockPos(start.getX() + vector.x * multiplier,
-                    start.getY() + vector.y * multiplier,
-                    start.getZ() + vector.z * multiplier);
-            // message.send("Teleporting to " + Arrays.toString(BlockPosUtils.toStringArray(expectedDestination)));
-            PlayerUtils.teleportCenter(expectedDestination);
-            multiplier++;
-        }
-        // message.send("Teleporting to " + Arrays.toString(BlockPosUtils.toStringArray(destination)));
-        PlayerUtils.teleportCenter(destination);
+        });
     }
 }

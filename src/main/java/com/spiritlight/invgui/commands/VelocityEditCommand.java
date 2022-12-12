@@ -28,7 +28,7 @@ public class VelocityEditCommand extends SpiritCommand {
     private static final Style textStyle = new Style().setHoverEvent(
             new HoverEvent(HoverEvent.Action.SHOW_TEXT, new TextComponentString(TextFormatting.GOLD + "Click here to hide!"))
     ).setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/vledit shutup"));
-    protected double[] modify = new double[3];
+    protected double[] modify = new double[] {1.0, 1.0, 1.0};
     private boolean shouldMute = false;
 
     @Override @ParametersAreNonnullByDefault
@@ -38,7 +38,7 @@ public class VelocityEditCommand extends SpiritCommand {
             return;
         }
         if(args.length == 1 && args[0].equals("reset")) {
-            Arrays.stream(modify).forEach(number -> number = 0);
+            modify = new double[] {1.0, 1.0, 1.0};
             return;
         }
         if(args.length == 1 && args[0].equals("shutup")) {

@@ -37,11 +37,16 @@ public class GuiHandler {
     public static boolean discardItem = true;
     private static final int[] textSelectionCodes = new int[] {Keyboard.KEY_C, Keyboard.KEY_V, Keyboard.KEY_X};
 
+    private static int mouseX;
+    private static int mouseY;
+
     @SubscribeEvent
     public void onDrawScreen(final GuiScreenEvent.DrawScreenEvent.Post event) {
         if(!(event.getGui() instanceof GuiContainer)) return;
         if(textField == null) return;
         if(!Main.enabled) return;
+        mouseX = event.getMouseX();
+        mouseY = event.getMouseY();
         textField.drawTextBox();
     }
 
@@ -132,8 +137,6 @@ public class GuiHandler {
     }
 
     public static boolean isTextFieldHovered(GuiTextField tf) {
-        final double mouseX = Mouse.getEventX();
-        final double mouseY = Mouse.getEventY();
         if(tf == null) return false;
         return mouseX >= tf.x && mouseY >= tf.y && mouseX < tf.x + tf.width && mouseY < tf.y + tf.height;
     }
