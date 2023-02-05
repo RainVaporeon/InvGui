@@ -6,16 +6,16 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-public abstract class AbstractConcurrentInfo {
-    private final Future<?> future;
+public class ConcurrentInfo<T> {
+    private final Future<T> future;
     private final UUID submit_id;
 
-    public AbstractConcurrentInfo(Future<?> future, UUID submit_id) {
+    public ConcurrentInfo(Future<T> future, UUID submit_id) {
         this.future = future;
         this.submit_id = submit_id;
     }
 
-    public Future<?> getFuture() {
+    public Future<T> getFuture() {
         return future;
     }
 
@@ -24,7 +24,7 @@ public abstract class AbstractConcurrentInfo {
     }
 
     @Interrupts
-    public Object getResult() throws ExecutionException, InterruptedException {
+    public T getResult() throws ExecutionException, InterruptedException {
         return this.getFuture().get();
     }
 

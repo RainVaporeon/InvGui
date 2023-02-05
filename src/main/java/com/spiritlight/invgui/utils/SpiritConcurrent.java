@@ -9,8 +9,8 @@ import java.util.concurrent.*;
 
 // Now that I look at it, CompletableFuture actually does better
 public class SpiritConcurrent {
-    private static final ExecutorService executors = Executors.newFixedThreadPool(8);
-    private static final ScheduledExecutorService queueThread = Executors.newScheduledThreadPool(4);
+    private static final ExecutorService executors = Executors.newFixedThreadPool(16);
+    private static final ScheduledExecutorService queueThread = Executors.newScheduledThreadPool(8);
     private static final ScheduledExecutorService cleanUpThread = Executors.newSingleThreadScheduledExecutor();
     private static final Map<UUID, Future<?>> executionID = new ConcurrentHashMap<>();
 
@@ -25,17 +25,17 @@ public class SpiritConcurrent {
      * @param exec The runnable to submit
      * @return A {@link ConcurrentData} containing the returned {@link Future} and a UUID linked to it for operations.
      */
-    public static ConcurrentData submitAsync(Runnable exec) {
+    public static ConcurrentData<?> submitAsync(Runnable exec) {
         Future<?> future = executors.submit(exec);
         UUID execUID = generateNewUUID();
         executionID.put(execUID, future);
-        return new ConcurrentData(future, execUID);
+        return new ConcurrentData<>(future, execUID);
     }
 
-    public static ScheduledData queueAsync(Runnable exec, long mills) {
+    public static ScheduledData<?> queueAsync(Runnable exec, long mills) {
         UUID execUID = generateNewUUID();
         ScheduledFuture<?> future = queueThread.schedule(exec, mills, TimeUnit.MILLISECONDS);
-        return new ScheduledData(future, execUID);
+        return new ScheduledData<>(future, execUID);
     }
 
     private static UUID generateNewUUID() {

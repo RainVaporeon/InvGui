@@ -93,7 +93,7 @@ public class CrashCommand extends SpiritCommand {
                 final int triesP = (a == -1 ? 10000 : a);
                 SpiritConcurrent.submitAsync(() -> {
                     for(int i = 0; i< triesP; i++) {
-                        PacketHandler.fire(new CPacketAnimation());
+                        PacketHandler.fire(new CPacketAnimation(), true);
                     }
                 });
                 break;

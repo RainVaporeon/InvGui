@@ -13,19 +13,17 @@ import org.apache.logging.log4j.LogManager;
 
 import java.util.*;
 
-import static com.spiritlight.invgui.connections.PacketHandler.Enum.READ;
-import static com.spiritlight.invgui.connections.PacketHandler.Enum.WRITE;
 
 public class PacketHandler extends ChannelDuplexHandler {
     private static final List<String> discardPacketsR = new ArrayList<>();
     private static final List<String> discardPacketsW = new ArrayList<>();
     private static boolean packetReceiving = true;
     private static final LinkedList<Packet<? extends INetHandler>> queuedPackets = new LinkedList<>();
-    private static final List<Packet<? extends INetHandler>> forceSend = new ArrayList<>();
+    private static final List<Packet<? extends INetHandler>> forceSend = new LinkedList<>();
 
     PacketHandler() {}
 
-    public enum Enum {
+    public enum Type {
         READ, WRITE
     }
 
@@ -110,7 +108,7 @@ public class PacketHandler extends ChannelDuplexHandler {
         packetReceiving = b;
     }
 
-    public static boolean discardPacket(String packetName, Enum type) {
+    public static boolean discardPacket(String packetName, Type type) {
         // true = operation success; otherwise fail
         if(!packetName.contains("Packet")) return false;
         try {
@@ -133,12 +131,12 @@ public class PacketHandler extends ChannelDuplexHandler {
 
     /**
      * Clears all handling packets
-     * @return A {@link Map} of <{@link Enum}, {@link List<String>}> of packet that has not been processed yet.
+     * @return A {@link Map} of <{@link Type}, {@link List<String>}> of packet that has not been processed yet.
      */
-    protected static Map<Enum, List<String>> clear() {
-        final Map<Enum, List<String>> ret = new HashMap<Enum, List<String>>() {{
-            put(READ, new ArrayList<>(discardPacketsR));
-            put(WRITE, new ArrayList<>(discardPacketsW));
+    protected static Map<Type, List<String>> clear() {
+        final Map<Type, List<String>> ret = new HashMap<Type, List<String>>() {{
+            put(Type.READ, new ArrayList<>(discardPacketsR));
+            put(Type.WRITE, new ArrayList<>(discardPacketsW));
         }};
         discardPacketsR.clear();
         discardPacketsW.clear();

@@ -14,6 +14,10 @@ import java.nio.file.Paths;
 
 public class Configurations {
     private static boolean flag = false;
+
+    // Deprecated: Accounts via tokens are not valid the next day,
+    // todo: Create an account manager that allows login via account/pw instead.
+    // alternatively a login stuff
     public static void getConfig() throws ProcessException {
         File config = new File("config/InvGui.json");
         try {

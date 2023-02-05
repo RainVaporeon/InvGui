@@ -97,7 +97,7 @@ public class Cat implements ICat {
         this.name = name;
         this.breed = "Orange";
         this.intelligence = 80;
-        this.relationMap = Maps.newHashMap();
+        this.relationMap = new HashMap<>();
     }
 
     /**
@@ -109,7 +109,7 @@ public class Cat implements ICat {
         this.name = name;
         this.breed = breed;
         this.intelligence = (int) ((RANDOM.nextDouble() + 0.5) * 100);
-        this.relationMap = Maps.newHashMap();
+        this.relationMap = new HashMap<>();
     }
 
     /**

@@ -29,7 +29,8 @@ public @interface AutoRegister {
     /**
      * The permission number, ranging from 0 to 4.<br>
      * This determines what's returned in getRequiredPermissionLevel if the command implementation
-     * is {@link com.spiritlight.invgui.utils.SpiritCommand}.
+     * is {@link com.spiritlight.invgui.utils.SpiritCommand}, or any underlying implementation
+     * that supports this.
      * @see CommandBase#getRequiredPermissionLevel()
      */
     int permission() default 4;

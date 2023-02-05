@@ -5,6 +5,7 @@ import com.spiritlight.invgui.connections.PacketHandler;
 import com.spiritlight.invgui.interfaces.annotations.AutoSubscribe;
 import com.spiritlight.invgui.message;
 import com.spiritlight.invgui.mixins.IMixinGuiScreen;
+import com.spiritlight.invgui.utils.MouseButton;
 import com.spiritlight.invgui.utils.PlayerUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.*;
@@ -35,9 +36,16 @@ public class GuiHandler {
     private boolean preventClosing = false;
     private static GuiScreen lastGui;
     public static boolean discardItem = true;
-    private static final int[] textSelectionCodes = new int[] {Keyboard.KEY_C, Keyboard.KEY_V, Keyboard.KEY_X};
+    private static final int[] textSelectionCodes = new int[] {Keyboard.KEY_C, Keyboard.KEY_V, Keyboard.KEY_X, Keyboard.KEY_Y , Keyboard.KEY_Z};
 
+    /**
+     * The X coordinate of the mouse pointer on the screen
+     */
     private static int mouseX;
+
+    /**
+     * The Y coordinate of the mouse pointer on the screen
+     */
     private static int mouseY;
 
     @SubscribeEvent
@@ -50,6 +58,7 @@ public class GuiHandler {
         textField.drawTextBox();
     }
 
+    // TODO: Find out why key inputs are no longer working
     @SubscribeEvent (priority = EventPriority.HIGHEST) // We want the highest priority on input to override other hotkeys for field inputs
     public void onKeyInput(final GuiScreenEvent.KeyboardInputEvent.Pre event) {
         if(!Main.enabled) return;
@@ -65,7 +74,9 @@ public class GuiHandler {
             textField.textboxKeyTyped(Keyboard.getEventCharacter(), Keyboard.getEventKey());
             previousInput = textField.getText();
             // Cancel any other operations after a valid textField input has been accepted: RegExr(\w) AND backspace for deletions
-            event.setCanceled(validInput.matcher((Character.toString(Keyboard.getEventCharacter()))).find() || ctrlKeyCombo(textSelectionCodes) || Keyboard.isKeyDown(Keyboard.KEY_BACK));
+            event.setCanceled(validInput.matcher((Character.toString(Keyboard.getEventCharacter()))).find() ||
+                    ctrlKeyCombo(textSelectionCodes) ||
+                    Keyboard.isKeyDown(Keyboard.KEY_BACK));
         }
     }
 
@@ -148,7 +159,7 @@ public class GuiHandler {
         if(!Main.enabled) {
             textField.setFocused(false);
         }
-        if(Mouse.getEventButton() != 0) return;
+        if(Mouse.getEventButton() != MouseButton.LEFT_CLICK) return;
         textField.setFocused(isTextFieldHovered(textField));
     }
 
@@ -219,7 +230,7 @@ public class GuiHandler {
                     preventClosing = false;
                     lastGui = event.getGui();
                     mc.player.sendMessage(new TextComponentString("Silently closed GUI. Press U (Default) to reopen it."));
-                    PacketHandler.discardPacket("CPacketCloseWindow", PacketHandler.Enum.WRITE);
+                    PacketHandler.discardPacket("CPacketCloseWindow", PacketHandler.Type.WRITE);
                     mc.player.closeScreen();
                     break;
                 case 102:

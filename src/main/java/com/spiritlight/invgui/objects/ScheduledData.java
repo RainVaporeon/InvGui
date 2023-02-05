@@ -6,21 +6,21 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledFuture;
 
-public class ScheduledData extends AbstractConcurrentInfo {
-    private final ScheduledFuture<?> future;
+public class ScheduledData<T> extends ConcurrentInfo<T> {
+    private final ScheduledFuture<T> future;
 
-    public ScheduledData(ScheduledFuture<?> future, UUID submit_id) {
+    public ScheduledData(ScheduledFuture<T> future, UUID submit_id) {
         super(future, submit_id);
         this.future = future;
     }
 
     @Override
-    public ScheduledFuture<?> getFuture() {
+    public ScheduledFuture<T> getFuture() {
         return this.future;
     }
 
     @Interrupts
-    public Object getResult() throws ExecutionException, InterruptedException {
+    public T getResult() throws ExecutionException, InterruptedException {
         return this.getFuture().get();
     }
 }
